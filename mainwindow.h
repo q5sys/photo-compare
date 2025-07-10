@@ -11,6 +11,11 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QMessageBox>
+#include <QSpinBox>
+#include <QDoubleSpinBox>
+#include <QGroupBox>
+#include <QCheckBox>
+#include <QComboBox>
 #include "imagecomparewidget.h"
 
 class MainWindow : public QMainWindow
@@ -20,11 +25,18 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+    
+    // Public methods for loading images from command line
+    void loadFirstImage(const QString &imagePath);
+    void loadSecondImage(const QString &imagePath);
 
 private slots:
     void selectFirstImage();
     void selectSecondImage();
     void onDirectionChanged();
+    void onCompareModeChanged();
+    void onDissolveSettingsChanged();
+    void onDissolveToggle();
 
 private:
     void setupUI();
@@ -33,26 +45,40 @@ private:
     // UI Components
     QWidget *centralWidget;
     QVBoxLayout *mainLayout;
-    QVBoxLayout *controlsLayout;
-    QHBoxLayout *imageButtonsLayout;
-    QHBoxLayout *directionLayout;
+    QHBoxLayout *controlsLayout;
     
+    // Left side - Image controls
+    QVBoxLayout *imageControlsLayout;
     QPushButton *firstImageButton;
     QPushButton *secondImageButton;
     QLabel *firstImageLabel;
     QLabel *secondImageLabel;
     
-    QRadioButton *leftToRightRadio;
-    QRadioButton *rightToLeftRadio;
-    QRadioButton *topToBottomRadio;
-    QRadioButton *bottomToTopRadio;
-    QButtonGroup *directionGroup;
+    // Right side - Mode controls
+    QVBoxLayout *modeControlsLayout;
+    
+    // Wipe mode controls
+    QHBoxLayout *wipeLayout;
+    QRadioButton *wipeModeRadio;
+    QComboBox *directionComboBox;
+    
+    // Dissolve mode controls
+    QHBoxLayout *dissolveLayout;
+    QRadioButton *dissolveModeRadio;
+    QLabel *holdTimeLabel;
+    QDoubleSpinBox *holdTimeSpinBox;
+    QLabel *transitionTimeLabel;
+    QDoubleSpinBox *transitionTimeSpinBox;
+    QPushButton *dissolveToggleButton;
+    
+    QButtonGroup *modeGroup;
     
     ImageCompareWidget *compareWidget;
     
     // Data
     QString firstImagePath;
     QString secondImagePath;
+    bool isDissolving;
 };
 
 #endif // MAINWINDOW_H

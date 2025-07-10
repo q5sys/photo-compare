@@ -11,16 +11,25 @@ MainWindow::MainWindow(QWidget *parent)
     , centralWidget(nullptr)
     , mainLayout(nullptr)
     , controlsLayout(nullptr)
-    , imageButtonsLayout(nullptr)
-    , directionLayout(nullptr)
+    , imageControlsLayout(nullptr)
     , firstImageButton(nullptr)
     , secondImageButton(nullptr)
     , firstImageLabel(nullptr)
     , secondImageLabel(nullptr)
-    , leftToRightRadio(nullptr)
-    , topToBottomRadio(nullptr)
-    , directionGroup(nullptr)
+    , modeControlsLayout(nullptr)
+    , wipeLayout(nullptr)
+    , wipeModeRadio(nullptr)
+    , directionComboBox(nullptr)
+    , dissolveLayout(nullptr)
+    , dissolveModeRadio(nullptr)
+    , holdTimeLabel(nullptr)
+    , holdTimeSpinBox(nullptr)
+    , transitionTimeLabel(nullptr)
+    , transitionTimeSpinBox(nullptr)
+    , dissolveToggleButton(nullptr)
+    , modeGroup(nullptr)
     , compareWidget(nullptr)
+    , isDissolving(false)
 {
     setupUI();
 }
@@ -40,49 +49,106 @@ void MainWindow::setupUI()
     setCentralWidget(centralWidget);
     mainLayout = new QVBoxLayout(centralWidget);
     
-    // Create controls layout
-    controlsLayout = new QVBoxLayout();
+    // Create single row controls layout split in middle
+    controlsLayout = new QHBoxLayout();
     
-    // Image selection buttons
-    imageButtonsLayout = new QHBoxLayout();
+    // Left side - Image controls (stacked)
+    imageControlsLayout = new QVBoxLayout();
+    
+    // First image row
+    QHBoxLayout *firstImageLayout = new QHBoxLayout();
     firstImageButton = new QPushButton("Select First Image", this);
-    secondImageButton = new QPushButton("Select Second Image", this);
     firstImageLabel = new QLabel("No image selected", this);
-    secondImageLabel = new QLabel("No image selected", this);
-    
     firstImageLabel->setStyleSheet("color: gray; font-style: italic;");
+    firstImageButton->setMaximumWidth(150);
+    
+    firstImageLayout->addWidget(firstImageButton);
+    firstImageLayout->addWidget(firstImageLabel);
+    firstImageLayout->addStretch();
+    
+    // Second image row
+    QHBoxLayout *secondImageLayout = new QHBoxLayout();
+    secondImageButton = new QPushButton("Select Second Image", this);
+    secondImageLabel = new QLabel("No image selected", this);
     secondImageLabel->setStyleSheet("color: gray; font-style: italic;");
+    secondImageButton->setMaximumWidth(150);
     
-    imageButtonsLayout->addWidget(firstImageButton);
-    imageButtonsLayout->addWidget(firstImageLabel);
-    imageButtonsLayout->addStretch();
-    imageButtonsLayout->addWidget(secondImageButton);
-    imageButtonsLayout->addWidget(secondImageLabel);
+    secondImageLayout->addWidget(secondImageButton);
+    secondImageLayout->addWidget(secondImageLabel);
+    secondImageLayout->addStretch();
     
-    // Direction selection
-    directionLayout = new QHBoxLayout();
-    leftToRightRadio = new QRadioButton("Left to Right", this);
-    rightToLeftRadio = new QRadioButton("Right to Left", this);
-    topToBottomRadio = new QRadioButton("Top to Bottom", this);
-    bottomToTopRadio = new QRadioButton("Bottom to Top", this);
-    directionGroup = new QButtonGroup(this);
+    imageControlsLayout->addLayout(firstImageLayout);
+    imageControlsLayout->addLayout(secondImageLayout);
     
-    directionGroup->addButton(leftToRightRadio);
-    directionGroup->addButton(rightToLeftRadio);
-    directionGroup->addButton(topToBottomRadio);
-    directionGroup->addButton(bottomToTopRadio);
-    leftToRightRadio->setChecked(true); // Default selection
+    // Right side - Mode controls (stacked)
+    modeControlsLayout = new QVBoxLayout();
     
-    directionLayout->addWidget(new QLabel("Compare Direction:", this));
-    directionLayout->addWidget(leftToRightRadio);
-    directionLayout->addWidget(rightToLeftRadio);
-    directionLayout->addWidget(topToBottomRadio);
-    directionLayout->addWidget(bottomToTopRadio);
-    directionLayout->addStretch();
+    // Wipe mode row
+    wipeLayout = new QHBoxLayout();
+    wipeModeRadio = new QRadioButton("Wipe", this);
+    directionComboBox = new QComboBox(this);
+    directionComboBox->addItem("Left to Right");
+    directionComboBox->addItem("Right to Left");
+    directionComboBox->addItem("Top to Bottom");
+    directionComboBox->addItem("Bottom to Top");
+    directionComboBox->setCurrentIndex(0); // Default to Left to Right
     
-    // Add controls to controls layout
-    controlsLayout->addLayout(imageButtonsLayout);
-    controlsLayout->addLayout(directionLayout);
+    wipeLayout->addWidget(wipeModeRadio);
+    wipeLayout->addWidget(directionComboBox);
+    wipeLayout->addStretch();
+    
+    // Dissolve mode row
+    dissolveLayout = new QHBoxLayout();
+    dissolveModeRadio = new QRadioButton("Dissolve", this);
+    
+    holdTimeLabel = new QLabel("Hold:", this);
+    holdTimeSpinBox = new QDoubleSpinBox(this);
+    holdTimeSpinBox->setRange(0.1, 10.0);
+    holdTimeSpinBox->setSingleStep(0.1);
+    holdTimeSpinBox->setValue(2.0);
+    holdTimeSpinBox->setDecimals(1);
+    holdTimeSpinBox->setSuffix("s");
+    holdTimeSpinBox->setMaximumWidth(60);
+    
+    transitionTimeLabel = new QLabel("Fade:", this);
+    transitionTimeSpinBox = new QDoubleSpinBox(this);
+    transitionTimeSpinBox->setRange(0.1, 5.0);
+    transitionTimeSpinBox->setSingleStep(0.1);
+    transitionTimeSpinBox->setValue(1.0);
+    transitionTimeSpinBox->setDecimals(1);
+    transitionTimeSpinBox->setSuffix("s");
+    transitionTimeSpinBox->setMaximumWidth(60);
+    
+    dissolveToggleButton = new QPushButton("Start", this);
+    dissolveToggleButton->setEnabled(false);
+    dissolveToggleButton->setMaximumWidth(60);
+    
+    dissolveLayout->addWidget(dissolveModeRadio);
+    dissolveLayout->addWidget(holdTimeLabel);
+    dissolveLayout->addWidget(holdTimeSpinBox);
+    dissolveLayout->addWidget(transitionTimeLabel);
+    dissolveLayout->addWidget(transitionTimeSpinBox);
+    dissolveLayout->addWidget(dissolveToggleButton);
+    dissolveLayout->addStretch();
+    
+    modeControlsLayout->addLayout(wipeLayout);
+    modeControlsLayout->addLayout(dissolveLayout);
+    
+    // Set up radio button group
+    modeGroup = new QButtonGroup(this);
+    modeGroup->addButton(wipeModeRadio);
+    modeGroup->addButton(dissolveModeRadio);
+    wipeModeRadio->setChecked(true); // Default selection
+    
+    // Initially enable wipe controls and disable dissolve controls
+    directionComboBox->setEnabled(true);
+    holdTimeSpinBox->setEnabled(false);
+    transitionTimeSpinBox->setEnabled(false);
+    dissolveToggleButton->setEnabled(false);
+    
+    // Add left and right sides to main controls layout
+    controlsLayout->addLayout(imageControlsLayout, 1);
+    controlsLayout->addLayout(modeControlsLayout, 1);
     
     // Create image compare widget
     compareWidget = new ImageCompareWidget(this);
@@ -94,10 +160,12 @@ void MainWindow::setupUI()
     // Connect signals
     connect(firstImageButton, &QPushButton::clicked, this, &MainWindow::selectFirstImage);
     connect(secondImageButton, &QPushButton::clicked, this, &MainWindow::selectSecondImage);
-    connect(leftToRightRadio, &QRadioButton::toggled, this, &MainWindow::onDirectionChanged);
-    connect(rightToLeftRadio, &QRadioButton::toggled, this, &MainWindow::onDirectionChanged);
-    connect(topToBottomRadio, &QRadioButton::toggled, this, &MainWindow::onDirectionChanged);
-    connect(bottomToTopRadio, &QRadioButton::toggled, this, &MainWindow::onDirectionChanged);
+    connect(directionComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onDirectionChanged);
+    connect(wipeModeRadio, &QRadioButton::toggled, this, &MainWindow::onCompareModeChanged);
+    connect(dissolveModeRadio, &QRadioButton::toggled, this, &MainWindow::onCompareModeChanged);
+    connect(holdTimeSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &MainWindow::onDissolveSettingsChanged);
+    connect(transitionTimeSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &MainWindow::onDissolveSettingsChanged);
+    connect(dissolveToggleButton, &QPushButton::clicked, this, &MainWindow::onDissolveToggle);
 }
 
 void MainWindow::selectFirstImage()
@@ -137,19 +205,130 @@ void MainWindow::onDirectionChanged()
     updateCompareWidget();
 }
 
+void MainWindow::onCompareModeChanged()
+{
+    if (wipeModeRadio->isChecked()) {
+        compareWidget->setCompareMode(ImageCompareWidget::WipeMode);
+        
+        // Enable wipe controls, disable dissolve controls
+        directionComboBox->setEnabled(true);
+        holdTimeSpinBox->setEnabled(false);
+        transitionTimeSpinBox->setEnabled(false);
+        dissolveToggleButton->setEnabled(false);
+        
+        // Stop dissolve if it's running
+        if (isDissolving) {
+            compareWidget->stopDissolve();
+            isDissolving = false;
+            dissolveToggleButton->setText("Start");
+        }
+    } else if (dissolveModeRadio->isChecked()) {
+        compareWidget->setCompareMode(ImageCompareWidget::DissolveMode);
+        
+        // Disable wipe controls, enable dissolve controls
+        directionComboBox->setEnabled(false);
+        holdTimeSpinBox->setEnabled(true);
+        transitionTimeSpinBox->setEnabled(true);
+        
+        // Enable dissolve button only if images are loaded
+        bool hasImages = !firstImagePath.isEmpty() && !secondImagePath.isEmpty();
+        dissolveToggleButton->setEnabled(hasImages);
+    }
+}
+
+void MainWindow::onDissolveSettingsChanged()
+{
+    double holdTime = holdTimeSpinBox->value();
+    double transitionTime = transitionTimeSpinBox->value();
+    compareWidget->setDissolveSettings(holdTime, transitionTime);
+}
+
+void MainWindow::onDissolveToggle()
+{
+    if (!isDissolving) {
+        // Start dissolve
+        compareWidget->startDissolve();
+        isDissolving = true;
+        dissolveToggleButton->setText("Stop");
+        
+        // Disable settings while dissolving
+        holdTimeSpinBox->setEnabled(false);
+        transitionTimeSpinBox->setEnabled(false);
+    } else {
+        // Stop dissolve
+        compareWidget->stopDissolve();
+        isDissolving = false;
+        dissolveToggleButton->setText("Start");
+        
+        // Re-enable settings
+        holdTimeSpinBox->setEnabled(true);
+        transitionTimeSpinBox->setEnabled(true);
+    }
+}
+
+void MainWindow::loadFirstImage(const QString &imagePath)
+{
+    if (!imagePath.isEmpty()) {
+        firstImagePath = imagePath;
+        QFileInfo fileInfo(imagePath);
+        firstImageLabel->setText(fileInfo.fileName());
+        firstImageLabel->setStyleSheet("color: black; font-style: normal;");
+        updateCompareWidget();
+    }
+}
+
+void MainWindow::loadSecondImage(const QString &imagePath)
+{
+    if (!imagePath.isEmpty()) {
+        secondImagePath = imagePath;
+        QFileInfo fileInfo(imagePath);
+        secondImageLabel->setText(fileInfo.fileName());
+        secondImageLabel->setStyleSheet("color: black; font-style: normal;");
+        updateCompareWidget();
+    }
+}
+
 void MainWindow::updateCompareWidget()
 {
     if (!firstImagePath.isEmpty() && !secondImagePath.isEmpty()) {
         compareWidget->setImages(firstImagePath, secondImagePath);
         
-        if (leftToRightRadio->isChecked()) {
-            compareWidget->setDirection(ImageCompareWidget::LeftToRight);
-        } else if (rightToLeftRadio->isChecked()) {
-            compareWidget->setDirection(ImageCompareWidget::RightToLeft);
-        } else if (topToBottomRadio->isChecked()) {
-            compareWidget->setDirection(ImageCompareWidget::TopToBottom);
-        } else if (bottomToTopRadio->isChecked()) {
-            compareWidget->setDirection(ImageCompareWidget::BottomToTop);
+        // Set direction based on combo box selection
+        int directionIndex = directionComboBox->currentIndex();
+        switch (directionIndex) {
+            case 0:
+                compareWidget->setDirection(ImageCompareWidget::LeftToRight);
+                break;
+            case 1:
+                compareWidget->setDirection(ImageCompareWidget::RightToLeft);
+                break;
+            case 2:
+                compareWidget->setDirection(ImageCompareWidget::TopToBottom);
+                break;
+            case 3:
+                compareWidget->setDirection(ImageCompareWidget::BottomToTop);
+                break;
+            default:
+                compareWidget->setDirection(ImageCompareWidget::LeftToRight);
+                break;
         }
+        
+        // Set compare mode
+        if (wipeModeRadio->isChecked()) {
+            compareWidget->setCompareMode(ImageCompareWidget::WipeMode);
+        } else if (dissolveModeRadio->isChecked()) {
+            compareWidget->setCompareMode(ImageCompareWidget::DissolveMode);
+        }
+        
+        // Update dissolve settings
+        compareWidget->setDissolveSettings(holdTimeSpinBox->value(), transitionTimeSpinBox->value());
+        
+        // Enable dissolve button if in dissolve mode
+        if (dissolveModeRadio->isChecked()) {
+            dissolveToggleButton->setEnabled(true);
+        }
+    } else {
+        // Disable dissolve button if no images
+        dissolveToggleButton->setEnabled(false);
     }
 }
