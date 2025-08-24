@@ -34,7 +34,7 @@ install(TARGETS PhotoCompare
 
 # Install icon
 install(FILES icons/PhotoCompare-256.png
-    DESTINATION share/pixmaps
+    DESTINATION share/icons/hicolor/256x256/apps
     RENAME PhotoCompare.png
 )
 
