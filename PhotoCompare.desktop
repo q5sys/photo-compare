@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Photo Compare
+Comment=Qt/C++ Image Comparison Tool with interactive mouse-over reveal effect
+GenericName=Image Comparison Tool
+Exec=PhotoCompare
+Icon=PhotoCompare
+Terminal=false
+StartupNotify=true
+Categories=Graphics;Photography;Utility;
+MimeType=image/png;image/jpeg;image/jpg;image/bmp;image/gif;image/tiff;
+Keywords=photo;image;compare;comparison;diff;
+StartupWMClass=PhotoCompare
